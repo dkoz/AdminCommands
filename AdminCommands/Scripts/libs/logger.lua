@@ -2,6 +2,31 @@ local constants = require("libs/constants")
 local config = require("config/config")
 local logger = {}
 
+local loggingDefaults = {
+    chat = true,
+    death = true,
+    connect = true,
+    disconnect = true,
+    capture = false,
+    command = true,
+    ban = true,
+    kick = true,
+    teleport = true,
+    spawn = true,
+}
+
+local logging = {}
+for key, default in pairs(loggingDefaults) do
+    local configured = config.logging and config.logging[key]
+    if configured == nil then
+        logging[key] = default
+    else
+        logging[key] = configured
+    end
+end
+
+logger.logging = logging
+
 local ModDirectory = debug.getinfo(1, "S").source:match([[^@?(.*[\/])[^\/]-$]]):match("^(.+[/\\])[^/\\]+[/\\]$")
 local log_folder = ModDirectory .. "logs"
 local server_log_folder = log_folder .. "/serverlogs"
@@ -29,13 +54,13 @@ function logger.logToServerFile(filename, line)
 end
 
 function logger.logChat(playerName, playerUID, category, message)
-    if not config.logging.chat then return end
+    if not logging.chat then return end
     local logLine = string.format("[%s] %s [%s]: %s", category, playerName, playerUID, message)
     logger.logToServerFile("chat.txt", logLine)
 end
 
 function logger.logDeath(victimName, victimUID, attackerName, attackerUID)
-    if not config.logging.death then return end
+    if not logging.death then return end
     local logLine
     if attackerName then
         logLine = string.format("%s [%s] was killed by %s [%s]", victimName, victimUID or "UnknownID", attackerName, attackerUID or "UnknownID")
@@ -46,51 +71,51 @@ function logger.logDeath(victimName, victimUID, attackerName, attackerUID)
 end
 
 function logger.logConnect(playerName, playerUID)
-    if not config.logging.connect then return end
+    if not logging.connect then return end
     local logLine = string.format("%s [%s] has connected.", playerName, playerUID)
     logger.logToServerFile("connections.txt", logLine)
 end
 
 function logger.logDisconnect(playerName, playerUID)
-    if not config.logging.disconnect then return end
+    if not logging.disconnect then return end
     local logLine = string.format("%s [%s] has disconnected.", playerName, playerUID)
     logger.logToServerFile("connections.txt", logLine)
 end
 
 function logger.logCapture(playerName, playerUID, palName)
-    if not config.logging.capture then return end
+    if not logging.capture then return end
     local logLine = string.format("%s [%s] captured %s.", playerName, playerUID, palName)
     logger.logToServerFile("captures.txt", logLine)
 end
 
 function logger.logCommand(playerName, playerUID, command, args)
-    if not config.logging.command then return end
+    if not logging.command then return end
     local logLine = string.format("%s [%s] executed: %s %s", playerName, playerUID, command, args or "")
     logger.logToFile("commands.txt", logLine)
 end
 
 function logger.logBan(adminName, adminUID, targetName, targetUID, reason)
-    if not config.logging.ban then return end
+    if not logging.ban then return end
     local logLine = string.format("%s [%s] banned %s [%s] - Reason: %s", 
         adminName, adminUID, targetName, targetUID, reason or "No reason")
     logger.logToFile("bans.txt", logLine)
 end
 
 function logger.logKick(adminName, adminUID, targetName, targetUID, reason)
-    if not config.logging.kick then return end
+    if not logging.kick then return end
     local logLine = string.format("%s [%s] kicked %s [%s] - Reason: %s", 
         adminName, adminUID, targetName, targetUID, reason or "No reason")
     logger.logToFile("kicks.txt", logLine)
 end
 
 function logger.logTeleport(playerName, playerUID, destination)
-    if not config.logging.teleport then return end
+    if not logging.teleport then return end
     local logLine = string.format("%s [%s] teleported to: %s", playerName, playerUID, destination)
     logger.logToFile("teleports.txt", logLine)
 end
 
 function logger.logSpawn(playerName, playerUID, palName, level, shiny)
-    if not config.logging.spawn then return end
+    if not logging.spawn then return end
     local shinyText = shiny and " (SHINY)" or ""
     local logLine = string.format("%s [%s] spawned: %s Lv%d%s", 
         playerName, playerUID, palName, level, shinyText)

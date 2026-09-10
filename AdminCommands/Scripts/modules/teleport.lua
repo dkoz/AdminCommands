@@ -2,6 +2,28 @@ local utils = require("libs/utils")
 local logger = require("libs/logger")
 local commands = {}
 
+local TELEPORT_HEIGHT_OFFSET = 500
+local IDENTITY_QUAT = { X = 0, Y = 0, Z = 0, W = 0 }
+
+local function teleportTo(char, location)
+    local palUtility = utils.getPalUtilities()
+    if not (palUtility and palUtility:IsValid()) then return false end
+
+    palUtility:TeleportAroundLoccation(char, location, IDENTITY_QUAT)
+    return true
+end
+
+local function headLocation(char)
+    local palUtility = utils.getPalUtilities()
+    if not (palUtility and palUtility:IsValid()) then return nil end
+
+    local loc = { X = 0, Y = 0, Z = 0 }
+    if not palUtility:TryGetHeadWorldPosition(char, loc) then return nil end
+
+    loc.Z = loc.Z + TELEPORT_HEIGHT_OFFSET
+    return loc
+end
+
 function commands.handleGoto(state, rest)
     local pc = state:GetPlayerController()
     if not rest or rest == "" then
@@ -9,62 +31,47 @@ function commands.handleGoto(state, rest)
         return
     end
 
-    local x, y, z = rest:match("^([%-%.%d]+)[,%s]+([%-%.%d]+)[,%s]+([%-%.%d]+)$")
-    if x then
-        local char = pc.Pawn
-        if not (char and char:IsValid()) then
-            utils.sendPersonalAnnounce(pc, "Could not find your character.")
-            return
-        end
-
-        local palUtility = utils.getPalUtilities()
-        if palUtility and palUtility:IsValid() then
-            local vec = {X = tonumber(x), Y = tonumber(y), Z = tonumber(z) + 500}
-            local quat = {X = 0, Y = 0, Z = 0, W = 0}
-            palUtility:TeleportAroundLoccation(char, vec, quat)
-            
-            local playerName = utils.GetPlayerName(state)
-            local playerUID = utils.GetPlayerId(state)
-            logger.logTeleport(playerName, playerUID, string.format("%.0f, %.0f, %.0f", tonumber(x), tonumber(y), tonumber(z)))
-            
-            utils.sendPersonalAnnounce(pc, "Teleported.")
-        end
+    local char = pc.Pawn
+    if not (char and char:IsValid()) then
+        utils.sendPersonalAnnounce(pc, "Could not find your character.")
         return
     end
 
-    local targetName = rest:match("^%s*(.-)%s*$")
-    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
-        if targetState and targetState:IsValid() then
-            local name = utils.GetPlayerName(targetState)
-            if name:lower() == targetName:lower() then
-                local targetPC = targetState:GetPlayerController()
-                local targetChar = targetPC and targetPC.Pawn
-                local char = pc.Pawn
-                
-                if targetChar and targetChar:IsValid() and char and char:IsValid() then
-                    local palUtility = utils.getPalUtilities()
-                    if palUtility and palUtility:IsValid() then
-                        local loc = {X = 0, Y = 0, Z = 0}
-                        local ok = palUtility:TryGetHeadWorldPosition(targetChar, loc)
-                        if ok then
-                            loc.Z = loc.Z + 500
-                            local quat = {X = 0, Y = 0, Z = 0, W = 0}
-                            palUtility:TeleportAroundLoccation(char, loc, quat)
-                            
-                            local playerName = utils.GetPlayerName(state)
-                            local playerUID = utils.GetPlayerId(state)
-                            logger.logTeleport(playerName, playerUID, "Player: " .. name)
-                            
-                            utils.sendPersonalAnnounce(pc, "Teleported to " .. name)
-                        end
-                    end
-                end
-                return
-            end
+    local x, y, z = rest:match("^([%-%.%d]+)[,%s]+([%-%.%d]+)[,%s]+([%-%.%d]+)$")
+    if x then
+        local location = { X = tonumber(x), Y = tonumber(y), Z = tonumber(z) + TELEPORT_HEIGHT_OFFSET }
+        if not teleportTo(char, location) then
+            utils.sendPersonalAnnounce(pc, "PalUtility not ready yet.")
+            return
         end
+
+        logger.logTeleport(utils.GetPlayerName(state), utils.GetPlayerId(state),
+            string.format("%.0f, %.0f, %.0f", tonumber(x), tonumber(y), tonumber(z)))
+        utils.sendPersonalAnnounce(pc, "Teleported.")
+        return
     end
 
-    utils.sendPersonalAnnounce(pc, "Player not found.")
+    local targetState, name = utils.findPlayerByName(rest)
+    if not targetState then
+        utils.sendPersonalAnnounce(pc, "Player not found.")
+        return
+    end
+
+    local targetPC = targetState:GetPlayerController()
+    local targetChar = targetPC and targetPC.Pawn
+    if not (targetChar and targetChar:IsValid()) then
+        utils.sendPersonalAnnounce(pc, "Could not find that player's character.")
+        return
+    end
+
+    local location = headLocation(targetChar)
+    if not location or not teleportTo(char, location) then
+        utils.sendPersonalAnnounce(pc, "Unable to reach that player.")
+        return
+    end
+
+    logger.logTeleport(utils.GetPlayerName(state), utils.GetPlayerId(state), "Player: " .. name)
+    utils.sendPersonalAnnounce(pc, "Teleported to " .. name)
 end
 
 function commands.handleGetPos(state)
@@ -74,10 +81,9 @@ function commands.handleGetPos(state)
         utils.sendPersonalAnnounce(pc, "Could not find your character.")
         return
     end
-    
+
     local loc = char:K2_GetActorLocation()
-    local msg = string.format("Your position: %.0f, %.0f, %.0f", loc.X, loc.Y, loc.Z)
-    utils.sendPersonalAnnounce(pc, msg)
+    utils.sendPersonalAnnounce(pc, string.format("Your position: %.0f, %.0f, %.0f", loc.X, loc.Y, loc.Z))
 end
 
 function commands.handlePlayerGetPos(state, rest)
@@ -86,26 +92,22 @@ function commands.handlePlayerGetPos(state, rest)
         utils.sendPersonalAnnounce(pc, "Usage: !getpos <PlayerName>")
         return
     end
-    
-    local targetName = rest:match("^%s*(.-)%s*$")
-    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
-        if targetState and targetState:IsValid() then
-            local name = utils.GetPlayerName(targetState)
-            if name:lower() == targetName:lower() then
-                local targetPC = targetState:GetPlayerController()
-                local targetChar = targetPC and targetPC.Pawn
-                
-                if targetChar and targetChar:IsValid() then
-                    local loc = targetChar:K2_GetActorLocation()
-                    local msg = string.format("%s's position: %.0f, %.0f, %.0f", name, loc.X, loc.Y, loc.Z)
-                    utils.sendPersonalAnnounce(pc, msg)
-                end
-                return
-            end
-        end
+
+    local targetState, name = utils.findPlayerByName(rest)
+    if not targetState then
+        utils.sendPersonalAnnounce(pc, "Player not found.")
+        return
     end
-    
-    utils.sendPersonalAnnounce(pc, "Player not found.")
+
+    local targetPC = targetState:GetPlayerController()
+    local targetChar = targetPC and targetPC.Pawn
+    if not (targetChar and targetChar:IsValid()) then
+        utils.sendPersonalAnnounce(pc, "Could not find that player's character.")
+        return
+    end
+
+    local loc = targetChar:K2_GetActorLocation()
+    utils.sendPersonalAnnounce(pc, string.format("%s's position: %.0f, %.0f, %.0f", name, loc.X, loc.Y, loc.Z))
 end
 
 function commands.handleBring(state, rest)
@@ -115,40 +117,33 @@ function commands.handleBring(state, rest)
         return
     end
 
-    local targetName = rest:match("^%s*(.-)%s*$")
     local adminChar = pc.Pawn
     if not (adminChar and adminChar:IsValid()) then
         utils.sendPersonalAnnounce(pc, "Could not find your character.")
         return
     end
 
-    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
-        if targetState and targetState:IsValid() then
-            local name = utils.GetPlayerName(targetState)
-            if name:lower() == targetName:lower() then
-                local targetPC = targetState:GetPlayerController()
-                local targetChar = targetPC and targetPC.Pawn
-                
-                if targetChar and targetChar:IsValid() then
-                    local palUtility = utils.getPalUtilities()
-                    if palUtility and palUtility:IsValid() then
-                        local loc = {X = 0, Y = 0, Z = 0}
-                        local ok = palUtility:TryGetHeadWorldPosition(adminChar, loc)
-                        if ok then
-                            loc.Z = loc.Z + 500
-                            local quat = {X = 0, Y = 0, Z = 0, W = 0}
-                            palUtility:TeleportAroundLoccation(targetChar, loc, quat)
-                            utils.sendPersonalAnnounce(pc, "Brought " .. name .. " to you.")
-                            utils.sendPersonalAnnounce(targetPC, "You have been brought to " .. utils.GetPlayerName(state))
-                        end
-                    end
-                end
-                return
-            end
-        end
+    local targetState, name = utils.findPlayerByName(rest)
+    if not targetState then
+        utils.sendPersonalAnnounce(pc, "Player not found.")
+        return
     end
 
-    utils.sendPersonalAnnounce(pc, "Player not found.")
+    local targetPC = targetState:GetPlayerController()
+    local targetChar = targetPC and targetPC.Pawn
+    if not (targetChar and targetChar:IsValid()) then
+        utils.sendPersonalAnnounce(pc, "Could not find that player's character.")
+        return
+    end
+
+    local location = headLocation(adminChar)
+    if not location or not teleportTo(targetChar, location) then
+        utils.sendPersonalAnnounce(pc, "Unable to get your position.")
+        return
+    end
+
+    utils.sendPersonalAnnounce(pc, "Brought " .. name .. " to you.")
+    utils.sendPersonalAnnounce(targetPC, "You have been brought to " .. utils.GetPlayerName(state))
 end
 
 function commands.handleBringAll(state, rest)
@@ -159,29 +154,19 @@ function commands.handleBringAll(state, rest)
         return
     end
 
-    local palUtility = utils.getPalUtilities()
-    if not palUtility or not palUtility:IsValid() then
-        utils.sendPersonalAnnounce(pc, "PalUtility not ready yet.")
-        return
-    end
-
-    local loc = {X = 0, Y = 0, Z = 0}
-    local ok = palUtility:TryGetHeadWorldPosition(adminChar, loc)
-    if not ok then
+    local location = headLocation(adminChar)
+    if not location then
         utils.sendPersonalAnnounce(pc, "Unable to get your position.")
         return
     end
-    loc.Z = loc.Z + 500
-    local quat = {X = 0, Y = 0, Z = 0, W = 0}
-    local count = 0
 
+    local count = 0
     for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
         if targetState and targetState:IsValid() then
             local targetPC = targetState:GetPlayerController()
             if targetPC and targetPC:IsValid() and targetPC ~= pc then
                 local targetChar = targetPC.Pawn
-                if targetChar and targetChar:IsValid() then
-                    palUtility:TeleportAroundLoccation(targetChar, loc, quat)
+                if targetChar and targetChar:IsValid() and teleportTo(targetChar, location) then
                     count = count + 1
                 end
             end

@@ -1,11 +1,13 @@
--- A lot of work went into this admin mod.
--- If you decide to use code please give credit
+-- Admin Commands for Palworld
+-- Created by: CaffeineModz/koz
+-- If you decide to use snippets of this code please give credit.
 
 local logic = require("libs/logic")
 local logger = require("libs/logger")
 local spawn = require("modules/spawn")
 local serverlogs = require("libs/serverlogs")
 local basecamp = require("modules/basecamp")
+local bossspawn = require("modules/bossspawn")
 
 local function SafeRegisterHook(hookPath, handler, retryDelayMs)
     local ok = pcall(function()
@@ -22,9 +24,9 @@ ExecuteWithDelay(1000, function()
     RegisterHook("/Script/Pal.PalPlayerController:EnterChat_Receive", logic.chatHook)
     RegisterHook("/Script/Pal.PalPlayerCharacter:OnCompleteInitializeParameter", logic.onCharacterInit)
     RegisterHook("/Script/Pal.PalNPCManager:SpawNPCCallback", spawn.onNpcSpawnCallback)
-    RegisterHook("/Script/Pal.PalCharacterParameterComponent:OnInitialize_AfterSetIndividualParameter", spawn.onCharacterParamInit)
 
     RegisterHook("/Script/Pal.PalCharacter:OnDeadCharacter", serverlogs.onDeadCharacter)
+    RegisterHook("/Script/Pal.PalCharacter:OnDeadCharacter", bossspawn.onDeadCharacter)
     RegisterHook("/Script/Pal.PalBullet:OnHit", basecamp.onBulletHit)
     SafeRegisterHook("/Game/Pal/Blueprint/Character/Player/Female/BP_Player_Female.BP_Player_Female_C:ReceiveEndPlay", serverlogs.onPlayerEndPlay)
     SafeRegisterHook("/Game/Pal/Blueprint/Weapon/Other/NewPalSphere/BP_PalSphere_Body.BP_PalSphere_Body_C:CaptureSuccessEvent", serverlogs.onCaptureSuccess)

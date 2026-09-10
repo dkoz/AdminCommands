@@ -4,6 +4,8 @@ local utils = require("libs/utils")
 local logger = require("libs/logger")
 local config = require("config/config")
 local serverlogs = require("libs/serverlogs")
+local freeze = require("modules/freeze")
+local godmode = require("modules/godmode")
 local logic = {}
 
 for k in pairs(commandHandlers) do
@@ -11,9 +13,13 @@ for k in pairs(commandHandlers) do
 end
 
 function logic.chatHook(ctx, Message, Category)
-    local text = Message:get():ToString()
     local pc = ctx:get()
+    if not (pc and pc:IsValid()) then return end
+
     local state = pc.PlayerState
+    if not (state and state:IsValid()) then return end
+
+    local text = Message:get():ToString()
 
     serverlogs.ChatLog(state, text, Category:get())
 
@@ -58,7 +64,12 @@ function logic.onCharacterInit(ctx)
         if pc and pc:IsValid() then
             pc:ClientTravelInternal("Void", 0, false, nil)
         end
+        return
     end
+
+    freeze.reapply(ps)
+    godmode.reapply(ps)
+
     if config.motdEnabled then
         local pc = ps:GetPlayerController()
         if pc and pc:IsValid() then

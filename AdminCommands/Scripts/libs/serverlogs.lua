@@ -2,7 +2,6 @@ local utils = require("libs/utils")
 local logger = require("libs/logger")
 local FGuid = require("libs/Fguid")
 local palData = require("enums/paldata")
-local config = require("config/config")
 
 local serverlogs = {}
 
@@ -147,7 +146,7 @@ function serverlogs.onPlayerEndPlay(ctx)
 end
 
 function serverlogs.onCaptureSuccess(ctx)
-    if not config.logging.capture then return end
+    if not logger.logging.capture then return end
     local sphere = ctx:get()
     serverlogs.CaptureLog(sphere)
 end

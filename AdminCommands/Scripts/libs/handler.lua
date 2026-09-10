@@ -7,6 +7,7 @@ local server = require("modules/server")
 local items = require("modules/items")
 local basecamp = require("modules/basecamp")
 local godmode = require("modules/godmode")
+local bossspawn = require("modules/bossspawn")
 local utils = require("libs/utils")
 
 local commandHandlers = {
@@ -30,6 +31,7 @@ local commandHandlers = {
     bringall = { admin = true, func = teleport.handleBringAll },
     spawn = { admin = true, func = spawn.handleSpawn },
     catch = { admin = true, func = spawn.handleCatch },
+    spawnboss = { admin = true, func = bossspawn.handleSpawnBoss },
     give = {
         admin = true,
         func = function(state, rest)
@@ -71,7 +73,7 @@ local commandHandlers = {
                 "!fly enable/disable | !freeze Player | !unfreeze Player | !announce msg | !settime 0-23 | " ..
                 "!goto x,y,z | !goto Player | !getpos [Player] | !time | !unstuck | " ..
                 "!ban Player reason | !unban Player | !kick Player | !slay Player | !bring Player | !bringall | " ..
-                "!destroybase x,y,z | !destroynearestbase | !admingun on/off | !god on/off"
+                "!destroybase x,y,z | !destroynearestbase | !admingun on/off | !god on/off | !spawnboss <name>"
             )
         end
     },

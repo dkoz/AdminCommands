@@ -9,7 +9,15 @@ ExecuteWithDelay(10000, function()
 end)
 
 function utils.sendPersonalAnnounce(PalPlayerController, Message)
+    if not (PalPlayerController and PalPlayerController:IsValid()) then
+        return
+    end
+
     ExecuteWithDelay(350, function()
+        if not (PalPlayerController and PalPlayerController:IsValid()) then
+            return
+        end
+
         local world = FindFirstOf("World")
         local playerState = PalPlayerController.PlayerState
         if not (PalUtilities and PalUtilities:IsValid() and world and world:IsValid() and playerState and playerState:IsValid()) then
@@ -49,6 +57,24 @@ function utils.GetPlayerName(ps)
 	return "Unknown"
 end
 
+function utils.findPlayerByName(targetName)
+    if not targetName or targetName == "" then return nil end
+
+    local wanted = targetName:match("^%s*(.-)%s*$"):lower()
+    if wanted == "" then return nil end
+
+    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
+        if targetState and targetState:IsValid() then
+            local name = utils.GetPlayerName(targetState)
+            if name:lower() == wanted then
+                return targetState, name
+            end
+        end
+    end
+
+    return nil
+end
+
 function utils.IsPlayerAdmin(state)
     if not (state and state:IsValid()) then
         return false
@@ -61,7 +87,7 @@ function utils.IsPlayerAdmin(state)
 
     local uid = utils.GetPlayerId(state)
     local uidNoDashes = uid:gsub("-", "")
-    for _, adminUID in ipairs(config.adminUIDs) do
+    for _, adminUID in ipairs(config.adminUIDs or {}) do
         if uidNoDashes == adminUID then
             return true
         end

@@ -4,30 +4,31 @@ local commands = {}
 
 local godModeEnabled = {}
 
-local function applyGodMode(pawn, enabled)
-    if not pawn or not pawn:IsValid() then return end
+local function applyGodMode(pawn, enable)
+    if not (pawn and pawn:IsValid()) then return false end
+
     local paramComp = pawn.CharacterParameterComponent
-    if paramComp and paramComp:IsValid() then
-        paramComp:SetMuteki(FName("AdminGodMode"), enabled)
+    if not (paramComp and paramComp:IsValid()) then return false end
+
+    paramComp:SetMuteki(FName("AdminGodMode"), enable)
+
+    local status = pawn.StatusComponent
+    if status and status:IsValid() then
+        if enable then
+            status:AddStatus(45)
+            status:AddStatus(41)
+        else
+            status:RemoveStatus(45)
+            status:RemoveStatus(41)
+        end
     end
+
+    return true
 end
 
 function commands.handleGodMode(state, rest)
     local pc = state:GetPlayerController()
     local uid = utils.GetPlayerId(state)
-    if not uid then return end
-
-    local pawn = pc.Pawn
-    if not pawn or not pawn:IsValid() then
-        utils.sendPersonalAnnounce(pc, "God Mode: No character found.")
-        return
-    end
-
-    local paramComp = pawn.CharacterParameterComponent
-    if not paramComp or not paramComp:IsValid() then
-        utils.sendPersonalAnnounce(pc, "God Mode: Character parameter component not found.")
-        return
-    end
 
     local enable = nil
     if rest and rest:lower() == "on" then
@@ -41,19 +42,34 @@ function commands.handleGodMode(state, rest)
         return
     end
 
+    if not applyGodMode(pc.Pawn, enable) then
+        utils.sendPersonalAnnounce(pc, "God Mode: Character parameter component not available.")
+        return
+    end
+
+    godModeEnabled[uid] = enable or nil
+
     if enable then
-        godModeEnabled[uid] = true
-        paramComp:SetMuteki(FName("AdminGodMode"), true)
         utils.sendPersonalAnnounce(pc, "God Mode enabled! You are invincible.")
     else
-        godModeEnabled[uid] = nil
-        paramComp:SetMuteki(FName("AdminGodMode"), false)
         utils.sendPersonalAnnounce(pc, "God Mode disabled! You are mortal again.")
     end
 
-    local playerName = utils.GetPlayerName(state)
-    local playerUID = utils.GetPlayerId(state)
-    logger.logCommand(playerName, playerUID, "god", enable and "on" or "off")
+    logger.logCommand(utils.GetPlayerName(state), uid, "god", enable and "on" or "off")
+end
+
+function commands.reapply(state)
+    if not (state and state:IsValid()) then return end
+    if not godModeEnabled[utils.GetPlayerId(state)] then return end
+
+    ExecuteWithDelay(1000, function()
+        if not (state and state:IsValid()) then return end
+
+        local pc = state:GetPlayerController()
+        if pc and pc:IsValid() then
+            applyGodMode(pc.Pawn, true)
+        end
+    end)
 end
 
 return commands

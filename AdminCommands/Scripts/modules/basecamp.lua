@@ -1,6 +1,5 @@
 local utils = require("libs/utils")
 local logger = require("libs/logger")
-local config = require("config/config")
 local commands = {}
 
 local DEFAULT_MARGIN = 2000.0
@@ -132,7 +131,10 @@ local adminGunEnabled = {}
 function commands.handleAdminGun(state, rest)
     local pc = state:GetPlayerController()
     local uid = utils.GetPlayerId(state)
-    if not uid then return end
+    if not uid then
+        utils.sendPersonalAnnounce(pc, "Admin Gun: Could not resolve player ID.")
+        return
+    end
 
     local enable = nil
     if rest and rest:lower() == "on" then
@@ -156,18 +158,18 @@ function commands.handleAdminGun(state, rest)
 end
 
 function commands.onBulletHit(ctx, hitComp, otherActor, otherComp, hit)
-    local bullet = ctx:get()
-    if not bullet or not bullet:IsValid() then return end
+    if next(adminGunEnabled) == nil then return end
+    if not otherActor then return end
 
-    local hitActor = nil
-    if otherActor then
-        hitActor = otherActor:get()
-    end
+    local hitActor = otherActor:get()
     if not hitActor or not hitActor:IsValid() then return end
 
     local isPalbox = false
     pcall(function() isPalbox = hitActor:IsA("/Script/Pal.PalBuildObjectBaseCampPoint") end)
     if not isPalbox then return end
+
+    local bullet = ctx:get()
+    if not bullet or not bullet:IsValid() then return end
 
     local controller = nil
     pcall(function() controller = bullet:GetInstigatorController() end)
@@ -210,8 +212,8 @@ function commands.onBulletHit(ctx, hitComp, otherActor, otherComp, hit)
     if not playerState or not playerState:IsValid() then return end
 
     local uid = utils.GetPlayerId(playerState)
-    if not utils.IsPlayerAdmin(playerState) then return end
     if not adminGunEnabled[uid] then return end
+    if not utils.IsPlayerAdmin(playerState) then return end
 
     local campIdOk, campId = pcall(function() return hitActor:GetBaseCampIdBelongTo() end)
     if campIdOk and campId then

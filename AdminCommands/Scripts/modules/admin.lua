@@ -7,6 +7,13 @@ local utils = require("libs/utils")
 local logger = require("libs/logger")
 local commands = {}
 
+local function disconnect(targetState)
+    local targetPC = targetState:GetPlayerController()
+    if targetPC and targetPC:IsValid() then
+        targetPC:ClientTravelInternal("Void", 0, false, nil)
+    end
+end
+
 function commands.handleBan(state, rest)
     local pc = state:GetPlayerController()
     if not rest or rest == "" then
@@ -20,30 +27,19 @@ function commands.handleBan(state, rest)
         return
     end
 
-    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
-        if targetState and targetState:IsValid() then
-            local name = utils.GetPlayerName(targetState)
-            if name:lower() == targetName:lower() then
-                local targetUID = utils.GetPlayerId(targetState)
-                local adminName = utils.GetPlayerName(state)
-                local adminUID = utils.GetPlayerId(state)
-                
-                bans.banUid(targetUID, name, reason)
-                logger.logBan(adminName, adminUID, name, targetUID, reason)
-                
-                local targetPC = targetState:GetPlayerController()
-                if targetPC and targetPC:IsValid() then
-                    targetPC:ClientTravelInternal("Void", 0, false, nil)
-                end
-                
-                utils.sendPersonalAnnounce(pc, "Banned " .. name .. " [" .. targetUID .. "]")
-                utils.sendServerAnnounce(name .. " has been banned.")
-                return
-            end
-        end
+    local targetState, name = utils.findPlayerByName(targetName)
+    if not targetState then
+        utils.sendPersonalAnnounce(pc, "Player not found.")
+        return
     end
 
-    utils.sendPersonalAnnounce(pc, "Player not found.")
+    local targetUID = utils.GetPlayerId(targetState)
+    bans.banUid(targetUID, name, reason)
+    logger.logBan(utils.GetPlayerName(state), utils.GetPlayerId(state), name, targetUID, reason)
+    disconnect(targetState)
+
+    utils.sendPersonalAnnounce(pc, "Banned " .. name .. " [" .. targetUID .. "]")
+    utils.sendServerAnnounce(name .. " has been banned.")
 end
 
 function commands.handleUnban(state, rest)
@@ -74,29 +70,17 @@ function commands.handleKick(state, rest)
         return
     end
 
-    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
-        if targetState and targetState:IsValid() then
-            local name = utils.GetPlayerName(targetState)
-            if name:lower() == targetName:lower() then
-                local targetUID = utils.GetPlayerId(targetState)
-                local adminName = utils.GetPlayerName(state)
-                local adminUID = utils.GetPlayerId(state)
-                
-                logger.logKick(adminName, adminUID, name, targetUID, reason)
-                
-                local targetPC = targetState:GetPlayerController()
-                if targetPC and targetPC:IsValid() then
-                    targetPC:ClientTravelInternal("Void", 0, false, nil)
-                end
-                
-                utils.sendPersonalAnnounce(pc, "Kicked " .. name)
-                utils.sendServerAnnounce(name .. " has been kicked.")
-                return
-            end
-        end
+    local targetState, name = utils.findPlayerByName(targetName)
+    if not targetState then
+        utils.sendPersonalAnnounce(pc, "Player not found.")
+        return
     end
 
-    utils.sendPersonalAnnounce(pc, "Player not found.")
+    logger.logKick(utils.GetPlayerName(state), utils.GetPlayerId(state), name, utils.GetPlayerId(targetState), reason)
+    disconnect(targetState)
+
+    utils.sendPersonalAnnounce(pc, "Kicked " .. name)
+    utils.sendServerAnnounce(name .. " has been kicked.")
 end
 
 function commands.handleSlay(state, rest)
@@ -106,24 +90,20 @@ function commands.handleSlay(state, rest)
         return
     end
 
-    local targetName = rest:lower()
-    for _, targetState in ipairs(FindAllOf("PalPlayerState") or {}) do
-        if targetState and targetState:IsValid() then
-            local name = utils.GetPlayerName(targetState)
-            if name:lower() == targetName then
-                local controller = targetState:GetPlayerController()
-                if controller and controller:IsValid() then
-                    controller:SelfKillPlayer()
-                    utils.sendPersonalAnnounce(pc, rest .. " has been killed.")
-                else
-                    utils.sendPersonalAnnounce(pc, "Could not find valid controller.")
-                end
-                return
-            end
-        end
+    local targetState, name = utils.findPlayerByName(rest)
+    if not targetState then
+        utils.sendPersonalAnnounce(pc, "Player not found.")
+        return
     end
 
-    utils.sendPersonalAnnounce(pc, "Player not found.")
+    local controller = targetState:GetPlayerController()
+    if not (controller and controller:IsValid()) then
+        utils.sendPersonalAnnounce(pc, "Could not find valid controller.")
+        return
+    end
+
+    controller:SelfKillPlayer()
+    utils.sendPersonalAnnounce(pc, name .. " has been killed.")
 end
 
 return commands

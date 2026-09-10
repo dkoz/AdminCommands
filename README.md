@@ -21,8 +21,9 @@ For setup guides and usage examples, see the [GUIDES](GUIDES.md).
 | `!getpos` | `!getpos` or `!getpos <player>` | Shows your current position or another player's position. |
 | `!bring` | `!bring <player>` | Teleports a player to your location. |
 | `!bringall` | `!bringall` | Teleports all other players to your location. |
-| `!spawn` | `!spawn <PalAsset> <level> [shiny] [x,y,z]` | Spawns a Pal near you or at specific coordinates. Pass `true` for shiny. |
-| `!catch` | `!catch <PalAsset> <level> [shiny]` | Spawns a Pal and automatically captures it. Pass `true` for shiny. |
+| `!spawn` | `!spawn <PalAsset> <level> [shiny] [x,y,z]` | Spawns a Pal near you or at specific coordinates. Pass `true` for shiny. Both extras are independent. |
+| `!catch` | `!catch <PalAsset> <level> [shiny] [x,y,z]` | Spawns a Pal and automatically captures it. Pass `true` for shiny. |
+| `!spawnboss` | `!spawnboss <BossName>` | Spawns a configured boss from `config/bossconfig.lua`. Run with no name to list them. |
 | `!give` | `!give <player> <ItemAsset>:<amount> <ItemAsset2>:<amount>` | Gives items to a target player. If no player name is given, gives to yourself. |
 | `!giveme` | `!giveme <ItemAsset>:<amount> <ItemAsset2>:<amount>` | Gives items directly to yourself. |
 | `!exp` | `!exp <amount>` or `!exp <player> <amount>` | Grants EXP to yourself or a target player. |

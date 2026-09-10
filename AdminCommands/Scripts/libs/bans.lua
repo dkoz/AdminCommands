@@ -3,7 +3,7 @@ local bans = {}
 
 local ModDirectory = debug.getinfo(1, "S").source:match([[^@?(.*[\/])[^\/]-$]]):match("^(.+[/\\])[^/\\]+[/\\]$")
 local BansFile = ModDirectory .. "config/bans.json"
-local BANS = BANS or {}
+local BANS = {}
 
 local function loadBans()
 	local f = io.open(BansFile, "r")
