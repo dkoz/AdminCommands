@@ -4,8 +4,11 @@ local config = {}
 config.commandPrefix = "!"
 
 -- Message of the Day (MOTD) Settings.  
+-- One entry per line. %s is the player's name.
 config.motdEnabled = false
-config.motdMessage = "Welcome %s! Enjoy your stay on the server."
+config.motdMessage = {
+    "Welcome %s! Enjoy your stay on the server.",
+}
 
 -- Broadcast Settings
 -- Broadcasts are messages that are sent to all players at regular intervals.

@@ -74,8 +74,20 @@ function logic.onCharacterInit(ctx)
         local pc = ps:GetPlayerController()
         if pc and pc:IsValid() then
             local name = ps.PlayerNamePrivate and ps.PlayerNamePrivate:ToString() or "Player"
-            local msg = string.format(config.motdMessage, name)
-            utils.sendPersonalAnnounce(pc, msg)
+            local lines = config.motdMessage
+            if type(lines) ~= "table" then
+                lines = { lines }
+            end
+            for i, line in ipairs(lines) do
+                local send = function()
+                    utils.sendPersonalAnnounce(pc, string.format(line, name))
+                end
+                if i == 1 then
+                    send()
+                else
+                    ExecuteWithDelay((i - 1) * 200, send)
+                end
+            end
         end
     end
 end
