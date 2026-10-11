@@ -11,14 +11,6 @@ local flyTickMs = 20
 
 local flying = {}
 
-local function schedule(delayMs, fn)
-    if type(ExecuteInGameThreadWithDelay) == "function" then
-        ExecuteInGameThreadWithDelay(delayMs, fn)
-    else
-        ExecuteWithDelay(delayMs, fn)
-    end
-end
-
 local function movementFor(state)
     if not (state and state:IsValid()) then return nil end
 
@@ -147,7 +139,7 @@ local function enforceFlight(state, uid)
         movement.Velocity = { X = next_x, Y = next_y, Z = next_z }
     end)
 
-    schedule(flyTickMs, function() enforceFlight(state, uid) end)
+    utils.scheduleAfter(flyTickMs, function() enforceFlight(state, uid) end)
 end
 
 function commands.handleFly(state, rest)

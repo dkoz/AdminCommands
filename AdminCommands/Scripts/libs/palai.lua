@@ -1,3 +1,4 @@
+local utils = require("libs/utils")
 local palai = {}
 
 local function getIndividualParameter(actor)
@@ -96,7 +97,7 @@ function palai.activate(actor, navmesh)
         return
     end
 
-    ExecuteWithDelay(500, function()
+    utils.scheduleAfter(500, function()
         if not (actor and actor:IsValid()) then return end
 
         local retryController = actor:GetController()

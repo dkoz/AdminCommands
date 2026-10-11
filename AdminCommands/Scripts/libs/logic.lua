@@ -53,7 +53,7 @@ function logic.onCharacterInit(ctx)
     if not (character and character:IsValid()) then return end
     local ps = character.PlayerState
     if not (ps and ps:IsValid()) then
-        return ExecuteWithDelay(50, function() logic.onCharacterInit(ctx) end)
+        return utils.scheduleAfter(50, function() logic.onCharacterInit(ctx) end)
     end
 
     serverlogs.ConnectLog(character)
@@ -85,7 +85,7 @@ function logic.onCharacterInit(ctx)
                 if i == 1 then
                     send()
                 else
-                    ExecuteWithDelay((i - 1) * 200, send)
+                    utils.scheduleAfter((i - 1) * 200, send)
                 end
             end
         end

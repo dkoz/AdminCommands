@@ -62,7 +62,7 @@ function commands.reapply(state)
     if not (state and state:IsValid()) then return end
     if not godModeEnabled[utils.GetPlayerId(state)] then return end
 
-    ExecuteWithDelay(1000, function()
+    utils.scheduleAfter(1000, function()
         if not (state and state:IsValid()) then return end
 
         local pc = state:GetPlayerController()
