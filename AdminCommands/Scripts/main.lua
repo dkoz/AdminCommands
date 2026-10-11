@@ -4,6 +4,7 @@
 
 local logic = require("libs/logic")
 local logger = require("libs/logger")
+local utils = require("libs/utils")
 local spawn = require("modules/spawn")
 local serverlogs = require("libs/serverlogs")
 local basecamp = require("modules/basecamp")
@@ -14,13 +15,13 @@ local function SafeRegisterHook(hookPath, handler, retryDelayMs)
         RegisterHook(hookPath, handler)
     end)
     if not ok then
-        ExecuteWithDelay(retryDelayMs or 2000, function()
+        utils.scheduleAfter(retryDelayMs or 2000, function()
             SafeRegisterHook(hookPath, handler, retryDelayMs)
         end)
     end
 end
 
-ExecuteWithDelay(1000, function()
+utils.scheduleAfter(1000, function()
     RegisterHook("/Script/Pal.PalPlayerController:EnterChat_Receive", logic.chatHook)
     RegisterHook("/Script/Pal.PalPlayerCharacter:OnCompleteInitializeParameter", logic.onCharacterInit)
     RegisterHook("/Script/Pal.PalNPCManager:SpawNPCCallback", spawn.onNpcSpawnCallback)

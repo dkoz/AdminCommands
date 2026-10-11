@@ -115,7 +115,7 @@ local function applyBossCombatRates(actor, bossData)
 end
 
 local function cleanupDropsNearLocation(location, radius)
-    ExecuteWithDelay(200, function()
+    utils.scheduleAfter(200, function()
         local ok, dropItems = pcall(function() return FindAllOf("PalMapObjectDropItem") end)
         if not ok or not dropItems then return end
         for _, drop in ipairs(dropItems) do
@@ -228,7 +228,7 @@ local function spawnBoss(bossData, pc)
         return
     end
 
-    ExecuteWithDelay(500, function()
+    utils.scheduleAfter(500, function()
         if not handle or not handle:IsValid() then return end
         local actor = handle:TryGetIndividualActor()
         if actor and actor:IsValid() then

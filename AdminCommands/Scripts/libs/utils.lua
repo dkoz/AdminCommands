@@ -1,10 +1,23 @@
 local FGuid = require("libs/Fguid")
 local config = require("config/config")
+local logger = require("libs/logger")
 local utils = {}
 
 local PalUtilities
 
-ExecuteWithDelay(10000, function()
+function utils.scheduleAfter(delayMs, fn)
+    local ok, err = pcall(ExecuteInGameThreadWithDelay, delayMs, function()
+        local callOk, callErr = pcall(fn)
+        if not callOk then
+            logger.error("[scheduleAfter] " .. tostring(callErr))
+        end
+    end)
+    if not ok then
+        logger.error("[scheduleAfter] scheduling failed: " .. tostring(err))
+    end
+end
+
+utils.scheduleAfter(10000, function()
     PalUtilities = StaticFindObject("/Script/Pal.Default__PalUtility")
 end)
 
@@ -13,7 +26,7 @@ function utils.sendPersonalAnnounce(PalPlayerController, Message)
         return
     end
 
-    ExecuteWithDelay(350, function()
+    utils.scheduleAfter(350, function()
         if not (PalPlayerController and PalPlayerController:IsValid()) then
             return
         end

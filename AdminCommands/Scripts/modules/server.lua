@@ -61,10 +61,10 @@ if config.broadcastEnabled then
             utils.BroadcastServerMessage(config.broadcastMessage)
         end
 
-        ExecuteWithDelay(config.broadcastIntervalMinutes * 60 * 1000, autoBroadcast)
+        utils.scheduleAfter(config.broadcastIntervalMinutes * 60 * 1000, autoBroadcast)
     end
 
-    ExecuteWithDelay(config.broadcastIntervalMinutes * 60 * 1000, autoBroadcast)
+    utils.scheduleAfter(config.broadcastIntervalMinutes * 60 * 1000, autoBroadcast)
 end
 
 return commands

@@ -66,7 +66,7 @@ local function configureSpawnedPal(handle, shiny, attempt)
     local actor_ok = actor and actor:IsValid()
 
     if (not param_ok or not actor_ok) and attempt < 5 then
-        ExecuteWithDelay(250, function()
+        utils.scheduleAfter(250, function()
             configureSpawnedPal(handle, shiny, attempt + 1)
         end)
         return
@@ -98,7 +98,7 @@ local function configureSpawnedPal(handle, shiny, attempt)
                     Y = base_scale.Y * 1.5,
                     Z = base_scale.Z * 1.5,
                 })
-                ExecuteWithDelay(1000, function()
+                utils.scheduleAfter(1000, function()
                     if actor and actor:IsValid() then
                         actor:SetActorScale3D({ X = 1.5, Y = 1.5, Z = 1.5 })
                     end
@@ -130,10 +130,10 @@ local function autoCapture(handle, playerChar)
             return
         end
 
-        ExecuteWithDelay(100, try_capture)
+        utils.scheduleAfter(100, try_capture)
     end
 
-    ExecuteWithDelay(150, try_capture)
+    utils.scheduleAfter(150, try_capture)
 end
 
 local function performSpawn(state, rest, capture)
@@ -212,7 +212,7 @@ local function performSpawn(state, rest, capture)
     end
     table.insert(pendingSpawnHandles, handle)
 
-    ExecuteWithDelay(500, function()
+    utils.scheduleAfter(500, function()
         configureSpawnedPal(handle, args.shiny, 1)
     end)
 
